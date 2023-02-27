@@ -6,7 +6,6 @@ const helper = require('./helper.js')
 const app = express()
 const port = 5500
 
-
 app.use(express.json());
 
 const connection = mysql.createConnection({
@@ -32,8 +31,6 @@ app.get('/auth/authenticate', async function(request, response) {
 
   userData = await helper.getUserData(connection, email, password)
 
-  console.log(userData);
-  console.log("{}")
   if(userData) {
     response.status(200).send(userData);
   }
@@ -49,7 +46,7 @@ app.post('/auth/create-user', function(request, response) {
 	let password = request.body.password;
 	let username = request.body.username;
   let isManager = request.body.isManager;
-	if (email && password && username && isManager) {
+	if (email && password && username && isManager != undefined) {
 		connection.query('SELECT * FROM users WHERE email = ? OR username = ?', [email, username], function(error, results) {
       if(error) {
         throw error
@@ -58,7 +55,7 @@ app.post('/auth/create-user', function(request, response) {
       if(results.length > 0) {
         response.status(400).send("User already exists");
       } else {
-        connection.query('INSERT INTO users (username, email, password, isManager) VALUES (?, ?, ?, ?)', [username, email, password, isManager], function(error, results, fields) {
+        connection.query('INSERT INTO users (username, email, password, isManager, isAdmin) VALUES (?, ?, ?, ?, false)', [username, email, password, isManager], function(error, results, fields) {
           if(error) {
             throw error
           }
@@ -67,35 +64,38 @@ app.post('/auth/create-user', function(request, response) {
       }
 		});
 	} else {
-    response.sendStatus(400).send('Not all fields are filled in!');
+    response.status(400).send('Not all fields are filled in!');
 	}
 });
 
-app.post('/auth/update-', function(request, response) {
-	let email = request.body.email;
-	let password = request.body.password;
-	let username = request.body.username;
-  let isManager = request.body.isManager;
-	if (email && password && username && isManager) {
-		connection.query('SELECT * FROM users WHERE email = ? OR username = ?', [email, username], function(error, results) {
-      if(error) {
-        throw error
-      }
+//all user attributes need to be provided due to my laziness
+app.post('/update/user', async function(request, response) {
 
-      if(results.length > 0) {
-        response.status(400).send("User already exists");
-      } else {
-        connection.query('INSERT INTO users (username, email, password, isManager) VALUES (?, ?, ?, ?)', [username, email, password, isManager], function(error, results, fields) {
-          if(error) {
-            throw error
-          }
-          response.sendStatus(200).send("User created successfully");
-        });
-      }
-		});
-	} else {
-    response.sendStatus(400).send('Not all fields are filled in!');
-	}
+  if(!request.body.email || !request.body.password) {
+    response.status(400).send("Email or password not provided");
+  }
+
+  //get user data from my sick helper function
+  userData = await helper.getUserData(connection, request.body.email, request.body.password)
+
+  if(!userData) {
+    response.status(403).send("User not authorized");
+  }
+
+	let email = request.body.email || userData.email;
+	let password = request.body.password || userData.password;
+  let username = request.body.username || userData.username;
+  let isManager = request.body.isManager || userData.isManager;
+  let isAdmin = request.body.isAdmin || userData.isAdmin;
+
+  //write an update query and send success or failure
+  connection.query('UPDATE users SET username = ?, email = ?, password = ?, isManager = ?, isAdmin = ? WHERE id = ?', [username, email, password, isManager, isAdmin, userData.id], function(error, results, fields) {
+    if(error) {
+      throw error
+    }
+    response.status(200).send("User updated successfully");
+  });
+
 });
 
 

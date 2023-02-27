@@ -1,9 +1,9 @@
 //Essential function that returns user data. 
-//Only returns data if the email and passowrd are correct
+//Only returns data if the email and password are correct
 //so this can be used for auth too!
 async function getUserData(connection, email, password) {
   if(email && password) {
-    const getUserDataCommand = "SELECT username, email, isManager FROM users WHERE email = ? AND password = ?"
+    const getUserDataCommand = "SELECT * FROM users WHERE email = ? AND password = ?"
     let userData = await new Promise((resolve, reject) => {
       connection.query(getUserDataCommand, [email, password], (err, rows, fields) => {
         if(err) {

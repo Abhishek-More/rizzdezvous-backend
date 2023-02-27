@@ -18,7 +18,7 @@ function initUserTable(connection) {
     `password` varchar(255) NOT NULL, \
     `email` varchar(100) NOT NULL, \
     `isManager` BOOLEAN NOT NULL, \
-    `isAdmin` BOOLEAN NULL, \
+    `isAdmin` BOOLEAN DEFAULT 0, \
     PRIMARY KEY (`id`) \
   ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8; \
   "
